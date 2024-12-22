@@ -17,13 +17,14 @@ def handle_message(data):
         socketio.emit('message', {'author': author, 'message': message})
 
 @socketio.on('get_user_messages')
-def handle_get_user_messages(data):  
-    all_messages = []
-    for author, messages in message_storage.items():
-        for message in messages:
-            all_messages.append({'author': author, 'message': message})
-    print(f'Sending all messages: {all_messages}')
-    socketio.emit('get_user_messages', {'messages': all_messages})
+def handle_get_user_messages(data): 
+    author = data.get('author')
+    user_messages = []
+    if author in message_storage:
+        user_messages = [{'author': author, 'message': msg} for msg in message_storage[author]]
+    
+    print(f"Sending messages for {author}: {user_messages}")
+    socketio.emit('get_user_messages', {'messages': user_messages})
 
 @socketio.on('connect')
 def handle_connect():
