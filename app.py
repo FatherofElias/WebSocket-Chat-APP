@@ -17,22 +17,27 @@ def handle_message(data):
         socketio.emit('message', {'author': author, 'message': message})
 
 @socketio.on('get_user_messages')
-def handle_get_user_messages(data): 
-    author = data.get('author')
-    user_messages = []
-    if author in message_storage:
-        user_messages = [{'author': author, 'message': msg} for msg in message_storage[author]]
-    
-    print(f"Sending messages for {author}: {user_messages}")
-    socketio.emit('get_user_messages', {'messages': user_messages})
+def handle_get_user_messages(data):  
+    print(f"Received data for get_user_messages: {data}")
+    if isinstance(data, dict):
+        author = data.get('author')  
+        if author in message_storage:
+            user_messages = [{'author': author, 'message': msg} for msg in message_storage[author]]
+        else:
+            user_messages = []
+
+        print(f"Sending messages for {author}: {user_messages}")
+        socketio.emit('get_user_messages', {'messages': user_messages})
+    else:
+        print("Data received in unexpected format")
 
 @socketio.on('connect')
 def handle_connect():
-        print('Client Connected')
+    print('Client Connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-        print('Client Disconnected')
+    print('Client Disconnected')
 
 @app.route('/')
 def index():
