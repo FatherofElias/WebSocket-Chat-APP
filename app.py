@@ -13,23 +13,24 @@ def handle_message(data):
         if author not in message_storage:
             message_storage[author] = []
         message_storage[author].append(message)
-        print(f'Received message from {author}: {message}')
         socketio.emit('message', {'author': author, 'message': message})
 
 @socketio.on('get_user_messages')
-def handle_get_user_messages(data):  
-    print(f"Received data for get_user_messages: {data}")
-    if isinstance(data, dict):
-        author = data.get('author')  
+def handle_get_user_messages(data):
+    try:
+        if isinstance(data, str):
+            data = eval(data) 
+
+        author = data.get('author')
         if author in message_storage:
             user_messages = [{'author': author, 'message': msg} for msg in message_storage[author]]
         else:
             user_messages = []
 
-        print(f"Sending messages for {author}: {user_messages}")
-        socketio.emit('get_user_messages', {'messages': user_messages})
-    else:
-        print("Data received in unexpected format")
+        socketio.emit('get_user_messages', {'author': author, 'messages': user_messages})
+    except Exception as e:
+        print(f"Error: {e}")
+        socketio.emit('error', {'message': 'An error occurred during message retrieval'})
 
 @socketio.on('connect')
 def handle_connect():
