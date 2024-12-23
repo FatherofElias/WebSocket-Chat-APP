@@ -1,5 +1,5 @@
 from web_socket_server import WebSocketServer, socketio
-from flask_socketio import join_room
+from flask_socketio import join_room, leave_room
 from flask import render_template, request, redirect, url_for
 import json
 
@@ -28,6 +28,15 @@ def handle_join(data):
         print(f'User {author} joined room {room}')
         socketio.emit('join', {'author': author, 'room': room}, room=room)
 
+@socketio.on('leave')
+def handle_leave(data):
+    room = data.get('room')
+    author = data.get('author')
+    if author and room:
+        leave_room(room)
+        print(f'User {author} left room {room}')
+        socketio.emit('leave', {'author': author, 'room': room}, room=room)
+
 @socketio.on('message')
 def handle_message(data):
     room = data.get('room')
@@ -37,19 +46,42 @@ def handle_message(data):
         print(f'Message from {author} in {room}: {message}')
         if author not in message_storage:
             message_storage[author] = []
-        message_storage[author].append(message)
+        message_storage[author].append({'message': message, 'id': len(message_storage[author])})
         socketio.emit('message', {'author': author, 'message': message}, room=room)
+
+@socketio.on('edit_message')
+def handle_edit_message(data):
+    room = data.get('room')
+    author = data.get('author')
+    message = data.get('message')
+    message_id = data.get('id')
+    if room and author and message and message_id is not None:
+        print(f'Editing message from {author} in {room}: {message}')
+        if author in message_storage and len(message_storage[author]) > message_id:
+            message_storage[author][message_id]['message'] = message
+            socketio.emit('edit_message', {'author': author, 'message': message, 'id': message_id}, room=room)
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    room = data.get('room')
+    author = data.get('author')
+    message_id = data.get('id')
+    if room and author and message_id is not None:
+        print(f'Deleting message from {author} in {room}')
+        if author in message_storage and len(message_storage[author]) > message_id:
+            del message_storage[author][message_id]
+            socketio.emit('delete_message', {'author': author, 'id': message_id}, room=room)
 
 @socketio.on('get_user_messages')
 def handle_get_user_messages(data):
     try:
         if isinstance(data, str):
-            data = json.loads(data)
+            data = json.loads(data)  
 
         author = data.get('author')
         room = data.get('room')
         if author in message_storage:
-            user_messages = [{'author': author, 'message': msg} for msg in message_storage[author]]
+            user_messages = [{'author': author, 'message': msg['message'], 'id': msg['id']} for msg in message_storage[author]]
         else:
             user_messages = []
 
