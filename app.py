@@ -6,6 +6,7 @@ import json
 server = WebSocketServer(debug=True)
 app = server.app
 message_storage = {}
+chat_rooms = {}  
 
 @app.route('/chat')
 def index():
@@ -26,6 +27,9 @@ def handle_join(data):
     if author and room:
         join_room(room)
         print(f'User {author} joined room {room}')
+        if room not in chat_rooms:
+            chat_rooms[room] = []
+        chat_rooms[room].append(author)
         socketio.emit('join', {'author': author, 'room': room}, room=room)
 
 @socketio.on('leave')
@@ -35,6 +39,10 @@ def handle_leave(data):
     if author and room:
         leave_room(room)
         print(f'User {author} left room {room}')
+        if room in chat_rooms:
+            chat_rooms[room].remove(author)
+            if not chat_rooms[room]:
+                del chat_rooms[room]
         socketio.emit('leave', {'author': author, 'room': room}, room=room)
 
 @socketio.on('message')
@@ -47,7 +55,7 @@ def handle_message(data):
         if author not in message_storage:
             message_storage[author] = []
         message_storage[author].append({'message': message, 'id': len(message_storage[author])})
-        socketio.emit('message', {'author': author, 'message': message}, room=room)
+        socketio.emit('message', {'author': author, 'message': message, 'id': message_storage[author][-1]['id']}, room=room)
 
 @socketio.on('edit_message')
 def handle_edit_message(data):
@@ -69,7 +77,7 @@ def handle_delete_message(data):
     if room and author and message_id is not None:
         print(f'Deleting message from {author} in {room}')
         if author in message_storage and len(message_storage[author]) > message_id:
-            del message_storage[author][message_id]
+            message_storage[author] = [msg for msg in message_storage[author] if msg['id'] != message_id]
             socketio.emit('delete_message', {'author': author, 'id': message_id}, room=room)
 
 @socketio.on('get_user_messages')
