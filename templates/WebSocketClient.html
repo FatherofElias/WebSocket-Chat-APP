@@ -12,12 +12,13 @@
         <input type="text" id="message-input" placeholder="Your message" autocomplete="off">
         <button type="submit">Send</button>
     </form>
-    <button id="get-messages">Get My Messages</button> 
+    <button id="get-messages">Get My Messages</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <script>
-        const socket = io();
-        const room = "{{ room }}";
-        const author = "{{ author }}";
+        const socket = io('ws://127.0.0.1:5000');
+        const urlParams = new URLSearchParams(window.location.search); 
+        const room = urlParams.get('room'); 
+        const author = urlParams.get('author'); 
 
         if (room && author) {
             socket.emit('join', {room, author});
@@ -46,12 +47,14 @@
             const li = document.createElement('li');
             li.textContent = `${data.author}: ${data.message}`;
             messages.appendChild(li);
+            console.log(`Message received: ${data.author}: ${data.message}`);
         });
 
         socket.on('join', function(data) {
             const li = document.createElement('li');
             li.textContent = `${data.author} has joined the chat.`;
             messages.appendChild(li);
+            console.log(`User joined: ${data.author}`);
         });
 
         socket.on('get_user_messages', function(data) {
@@ -60,6 +63,7 @@
                 const li = document.createElement('li');
                 li.textContent = `${data.author}: ${message}`;
                 messages.appendChild(li);
+                console.log(`Retrieved messages: ${data.author}: ${message}`);
             });
         });
 
@@ -69,4 +73,3 @@
     </script>
 </body>
 </html>
- 
