@@ -9,34 +9,36 @@
     <h1>Flask-SocketIO Chat</h1>
     <ul id="messages"></ul>
     <form id="message-form">
-        <input type="text" id="author-input" placeholder="Your name" autocomplete="off">
         <input type="text" id="message-input" placeholder="Your message" autocomplete="off">
         <button type="submit">Send</button>
     </form>
-    <button id="join-chat">Join Chat</button>
+    <button id="get-messages">Get My Messages</button> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <script>
         const socket = io();
+        const room = "{{ room }}";
+        const author = "{{ author }}";
+
+        if (room && author) {
+            socket.emit('join', {room, author});
+        }
+
         const form = document.getElementById('message-form');
-        const joinChatBtn = document.getElementById('join-chat');
-        const authorInput = document.getElementById('author-input');
-        const messageInput = document.getElementById('message-input');
         const messages = document.getElementById('messages');
+        const getMessagesBtn = document.getElementById('get-messages');
 
         form.addEventListener('submit', function(event) {
             event.preventDefault();
-            const author = authorInput.value.trim();
-            const message = messageInput.value.trim();
-            if (author !== '' && message !== '') {
-                socket.emit('message', {author, message});
-                messageInput.value = '';
+            const message = document.getElementById('message-input').value.trim();
+            if (message) {
+                socket.emit('message', {room, author, message});
+                document.getElementById('message-input').value = '';
             }
         });
 
-        joinChatBtn.addEventListener('click', function() {
-            const author = authorInput.value.trim();
-            if (author !== '') {
-                socket.emit('join', {author});
+        getMessagesBtn.addEventListener('click', function() {
+            if (room && author) {
+                socket.emit('get_user_messages', {room, author});
             }
         });
 
@@ -52,9 +54,19 @@
             messages.appendChild(li);
         });
 
+        socket.on('get_user_messages', function(data) {
+            messages.innerHTML = '';
+            data.messages.forEach(message => {
+                const li = document.createElement('li');
+                li.textContent = `${data.author}: ${message}`;
+                messages.appendChild(li);
+            });
+        });
+
         socket.on('disconnect', function() {
             console.log('Disconnected from server');
         });
     </script>
 </body>
 </html>
+ 

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create or Join Room</title>
+</head>
+<body>
+    <h1>Create or Join Room</h1>
+    <form id="join-form" action="/" method="get">
+        <input type="text" id="room-input" name="room" placeholder="Room name" required>
+        <input type="text" id="author-input" name="author" placeholder="Your name" required>
+        <button type="submit">Join Room</button>
+    </form>
+    <script>
+        document.getElementById('join-form').addEventListener('submit', function(event) {
+            const room = document.getElementById('room-input').value.trim();
+            const author = document.getElementById('author-input').value.trim();
+            if (room && author) {
+                localStorage.setItem('chat_room', room);
+                localStorage.setItem('chat_author', author);
+            }
+        });
+    </script>
+</body>
+</html>
