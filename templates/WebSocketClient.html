@@ -13,6 +13,7 @@
         <input type="text" id="message-input" placeholder="Your message" autocomplete="off">
         <button type="submit">Send</button>
     </form>
+    <button id="get-messages">Get My Messages</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <script>
         const socket = io();
@@ -20,6 +21,7 @@
         const authorInput = document.getElementById('author-input');
         const messageInput = document.getElementById('message-input');
         const messages = document.getElementById('messages');
+        const getMessagesBtn = document.getElementById('get-messages');
 
         form.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -31,10 +33,26 @@
             }
         });
 
+        getMessagesBtn.addEventListener('click', function() {
+            const author = authorInput.value.trim();
+            if (author !== '') {
+                socket.emit('get_user_messages', {author});
+            }
+        });
+
         socket.on('message', function(data) {
             const li = document.createElement('li');
             li.textContent = `${data.author}: ${data.message}`;
             messages.appendChild(li);
+        });
+
+        socket.on('get_user_messages', function(data) {
+            messages.innerHTML = '';
+            data.messages.forEach(message => {
+                const li = document.createElement('li');
+                li.textContent = `${data.author}: ${message}`;
+                messages.appendChild(li);
+            });
         });
     </script>
 </body>

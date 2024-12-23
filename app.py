@@ -1,5 +1,6 @@
 from web_socket_server import WebSocketServer, socketio
 from flask import render_template
+import json
 
 server = WebSocketServer()
 app = server.app
@@ -19,7 +20,7 @@ def handle_message(data):
 def handle_get_user_messages(data):
     try:
         if isinstance(data, str):
-            data = eval(data) 
+            data = json.loads(data)  
 
         author = data.get('author')
         if author in message_storage:
@@ -28,6 +29,9 @@ def handle_get_user_messages(data):
             user_messages = []
 
         socketio.emit('get_user_messages', {'author': author, 'messages': user_messages})
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}")
+        socketio.emit('error', {'message': 'Invalid JSON format'})
     except Exception as e:
         print(f"Error: {e}")
         socketio.emit('error', {'message': 'An error occurred during message retrieval'})
