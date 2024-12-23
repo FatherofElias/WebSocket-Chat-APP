@@ -2,9 +2,19 @@ from web_socket_server import WebSocketServer, socketio
 from flask import render_template
 import json
 
-server = WebSocketServer()
+server = WebSocketServer(debug=True)
 app = server.app
 message_storage = {}
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@socketio.on('join')
+def handle_join(data):
+    author = data.get('author')
+    if author:
+        socketio.emit('join', {'author': author})
 
 @socketio.on('message')
 def handle_message(data):
@@ -43,10 +53,6 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client Disconnected')
-
-@app.route('/')
-def index():
-    return render_template('WebSocketClient.html')
 
 if __name__ == '__main__':
     socketio.run(app)
